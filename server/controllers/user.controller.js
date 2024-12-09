@@ -159,7 +159,7 @@ const sendForm = async (req, res) => {
       adoptionDetails 
     } = req.body;
 
-    // Check if the pet exists
+   
     const pet = await Pet.findById(petId);
     if (!pet) {
       return res.status(404).json({ success: false, message: "Pet not found" });
@@ -167,14 +167,14 @@ const sendForm = async (req, res) => {
 
     console.log(userId, petId);
 
-    // Check if an adoption form already exists for this user and pet
+    
     const existingForm = await AdoptionForm.findOne({ user: userId, pet: petId });
     console.log(existingForm);
     if (existingForm) {
       return res.status(400).json({ success: false, message: "You have already submitted an adoption form for this pet." });
     }
 
-    // Create a new adoption form
+   
     const adoptionForm = new AdoptionForm({
       user: userId,
       pet: petId,
@@ -185,13 +185,13 @@ const sendForm = async (req, res) => {
       adoptionDetails,
     });
 
-    // Save the adoption form to the database
+    
     const savedForm = await adoptionForm.save();
 
-    // Send the saved adoption form to Kafka
+   
     await sendAdoptionApplication(savedForm);
 
-    // Respond with success
+    
     res.status(201).json({
       success: true,
       message: "Adoption form submitted successfully.",
