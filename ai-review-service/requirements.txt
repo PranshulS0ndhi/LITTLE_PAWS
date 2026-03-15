@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+langchain
+langchain-google-genai
+motor
+redis
+python-dotenv
+pydantic-settings

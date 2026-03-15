@@ -57,8 +57,13 @@ const AdoptionFormSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending',
+    enum: ['under-review', 'accepted', 'rejected'],
+    default: 'under-review',
+  },
+  aiReview: {
+    verdict: { type: String },
+    reason: { type: String },
+    reviewedAt: { type: Date },
   },
   submissionDate: {
     type: Date,

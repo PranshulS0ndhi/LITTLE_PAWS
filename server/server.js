@@ -12,6 +12,7 @@ const shopProductsRouter=require('./routes/shop/prdoucts-routes')
 const shopcartRouter=require("./routes/shop/cart-routes")
 const shopAddressRouter= require("./routes/shop/address-routes")
 const shopOrderRouter= require("./routes/shop/order-routes")
+const adoptionRouter = require('./routes/adoption.routes')
 //require('dotenv').config();
 // create database || create a separate file also and import it than
 mongoose.connect(process.env.MONGODB_URL)
@@ -52,6 +53,7 @@ app.use("/api/shop/products",shopProductsRouter)
 app.use("/api/shop/cart",shopcartRouter)
 app.use("/api/shop/address",shopAddressRouter)
 app.use("/api/shop/order",shopOrderRouter)
+app.use("/api/adoptions", adoptionRouter)
 app.listen(PORT,()=>{
     console.log(`Server is now running on port ${PORT}`)
 })
