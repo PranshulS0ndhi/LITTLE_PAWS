@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import MainNavbar from '@/components/main-navbar/MainNavbar';
-import { Brain, Filter, CheckCircle, XCircle, Clock, User, MessageSquare, Loader2, Inbox, History } from 'lucide-react';
+import { Brain, Filter, CheckCircle, XCircle, Clock, User, MessageSquare, Loader2, Inbox, History, Home, Briefcase, Heart, BookOpen, ExternalLink, ShieldQuestion } from 'lucide-react';
 
 const MainShelterAdmin = () => {
     const { user } = useSelector(state => state.auth);
@@ -18,6 +19,7 @@ const MainShelterAdmin = () => {
     const [loading, setLoading] = useState(true);
     const [processingApps, setProcessingApps] = useState({});
     const [activeTab, setActiveTab] = useState('pending');
+    const [selectedApp, setSelectedApp] = useState(null);
     const { toast } = useToast();
 
     // Memoized counts of yet-to-be-reviewed apps
@@ -32,14 +34,8 @@ const MainShelterAdmin = () => {
             if (response.data.success) {
                 const fetchedApps = response.data.applications;
                 
-                // If silent fetch, only notify for NEW yet-to-be-reviewed apps
                 if (silent) {
                     const newPendingAppsCount = fetchedApps.filter(app => ['ai-reviewed', 'under-manual-review'].includes(app.status)).length;
-                    
-                    // Use a local ref-like behavior with state comparison
-                    // We only notify if the count of PENDING applications specifically increased
-                    // This prevents notifications when finalized apps are added (which shouldn't happen anyway)
-                    // or when apps move to accepted/rejected status
                     if (newPendingAppsCount > pendingAppsCount) {
                         toast({
                             title: "New Application Received!",
@@ -77,7 +73,7 @@ const MainShelterAdmin = () => {
         }, 10000);
 
         return () => clearInterval(interval);
-    }, [pendingAppsCount]); // Re-subscribe if count changes to keep the comparison logic fresh
+    }, [pendingAppsCount]);
 
     const handleToggleMode = async () => {
         const newMode = aiMode === 'complete' ? 'partial' : 'complete';
@@ -110,6 +106,9 @@ const MainShelterAdmin = () => {
                 setApplications(prev => prev.map(app => 
                     app._id === appId ? { ...app, status: action === 'accept' ? 'accepted' : 'rejected' } : app
                 ));
+                if (selectedApp && selectedApp._id === appId) {
+                    setSelectedApp(null);
+                }
             }
         } catch (error) {
             toast({ title: `Failed to ${action} application`, variant: "destructive" });
@@ -201,7 +200,11 @@ const MainShelterAdmin = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredApplications.map((app) => (
-                            <Card key={app._id} className={`border-none shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col rounded-3xl group relative ${app.status === 'accepted' ? 'border-t-4 border-green-500' : app.status === 'rejected' ? 'border-t-4 border-red-500' : ''}`}>
+                            <Card 
+                                key={app._id} 
+                                className={`border-none shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col rounded-3xl group relative cursor-pointer ${app.status === 'accepted' ? 'border-t-4 border-green-500' : app.status === 'rejected' ? 'border-t-4 border-red-500' : ''}`}
+                                onClick={() => setSelectedApp(app)}
+                            >
                                 {processingApps[app._id] && (
                                     <div className="absolute inset-0 bg-white/80 backdrop-blur-md z-20 flex items-center justify-center transition-all rounded-3xl">
                                         <div className="text-center">
@@ -223,7 +226,10 @@ const MainShelterAdmin = () => {
                                             {new Date(app.submissionDate).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight truncate">{app.user?.userName}</CardTitle>
+                                    <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight truncate flex items-center justify-between">
+                                        {app.user?.userName}
+                                        <ExternalLink size={16} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                                    </CardTitle>
                                     <CardDescription className="flex items-center text-indigo-600 font-black text-xs uppercase tracking-widest mt-1">
                                         🎯 TARGET: {app.pet?.name || 'Unnamed Pet'}
                                     </CardDescription>
@@ -267,7 +273,7 @@ const MainShelterAdmin = () => {
                                             <Button 
                                                 disabled={!!processingApps[app._id]}
                                                 className="flex-1 bg-green-500 hover:bg-green-600 h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-green-100 transition-all active:scale-95 border-b-4 border-green-700"
-                                                onClick={() => handleReview(app._id, 'accept')}
+                                                onClick={(e) => { e.stopPropagation(); handleReview(app._id, 'accept'); }}
                                             >
                                                 <CheckCircle size={20} className="mr-2" />
                                                 Approve
@@ -276,7 +282,7 @@ const MainShelterAdmin = () => {
                                                 disabled={!!processingApps[app._id]}
                                                 variant="destructive" 
                                                 className="flex-1 bg-red-500 hover:bg-red-600 h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-red-100 transition-all active:scale-95 border-b-4 border-red-700"
-                                                onClick={() => handleReview(app._id, 'reject')}
+                                                onClick={(e) => { e.stopPropagation(); handleReview(app._id, 'reject'); }}
                                             >
                                                 <XCircle size={20} className="mr-2" />
                                                 Decline
@@ -296,6 +302,210 @@ const MainShelterAdmin = () => {
                     </div>
                 )}
             </div>
+
+            {/* Detailed Application Modal */}
+            <Dialog open={!!selectedApp} onOpenChange={() => setSelectedApp(null)}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 rounded-3xl border-none shadow-2xl">
+                    <DialogHeader className="p-8 bg-indigo-950 text-white rounded-t-3xl border-b border-indigo-900">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <Badge className={`${getStatusVariant(selectedApp?.status)} mb-4 px-4 py-1.5 rounded-full uppercase text-xs font-black tracking-[0.2em] shadow-lg`}>
+                                    {selectedApp?.status.replace('-', ' ')}
+                                </Badge>
+                                <DialogTitle className="text-4xl font-black tracking-tighter uppercase mb-2">
+                                    Adoption Dossier: {selectedApp?.user?.userName}
+                                </DialogTitle>
+                                <p className="text-indigo-300 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                                    Applying for {selectedApp?.pet?.name || 'Unknown Pet'}
+                                </p>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="flex-grow overflow-y-auto p-8 bg-white">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                            {/* Personal Info */}
+                            <div className="space-y-8">
+                                <section>
+                                    <h3 className="text-xs font-black text-indigo-600 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                        <User className="w-4 h-4" /> Personal Profile
+                                    </h3>
+                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                                        <div>
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</Label>
+                                            <p className="text-lg font-black text-slate-900">{selectedApp?.personalInfo?.fullName}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</Label>
+                                                <p className="text-sm font-bold text-slate-700">{selectedApp?.personalInfo?.phone}</p>
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</Label>
+                                                <p className="text-sm font-bold text-slate-700 truncate">{selectedApp?.personalInfo?.email}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Occupation</Label>
+                                            <p className="text-sm font-bold text-slate-700">{selectedApp?.personalInfo?.occupation}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Working Hours</Label>
+                                            <p className="text-sm font-bold text-slate-700">{selectedApp?.personalInfo?.workingHours}</p>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <h3 className="text-xs font-black text-indigo-600 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                        <Home className="w-4 h-4" /> Living Situation
+                                    </h3>
+                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Residence</Label>
+                                                <p className="text-sm font-bold text-slate-700">{selectedApp?.livingConditions?.residenceType}</p>
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ownership</Label>
+                                                <p className="text-sm font-bold text-slate-700">{selectedApp?.livingConditions?.ownershipStatus}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <Badge variant={selectedApp?.livingConditions?.hasYard ? "default" : "secondary"} className="rounded-lg font-black">
+                                                {selectedApp?.livingConditions?.hasYard ? "Has Yard" : "No Yard"}
+                                            </Badge>
+                                            {selectedApp?.livingConditions?.hasYard && (
+                                                <Badge variant={selectedApp?.livingConditions?.yardFenced ? "default" : "destructive"} className="rounded-lg font-black">
+                                                    {selectedApp?.livingConditions?.yardFenced ? "Fenced" : "Not Fenced"}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Household</Label>
+                                            <p className="text-sm font-bold text-slate-700">{selectedApp?.livingConditions?.householdMembers}</p>
+                                        </div>
+                                        {selectedApp?.livingConditions?.childrenAges && (
+                                            <div>
+                                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ages of Children</Label>
+                                                <p className="text-sm font-bold text-slate-700">{selectedApp?.livingConditions?.childrenAges}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+                            </div>
+
+                            {/* Pet Experience & Motivation */}
+                            <div className="space-y-8">
+                                <section>
+                                    <h3 className="text-xs font-black text-indigo-600 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                        <ShieldQuestion className="w-4 h-4" /> Pet History
+                                    </h3>
+                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                                        <div>
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Pets</Label>
+                                            <p className="text-sm font-bold text-slate-700">{selectedApp?.petExperience?.currentPets || 'None'}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Previous Experience</Label>
+                                            <p className="text-sm font-bold text-slate-700">{selectedApp?.petExperience?.previousPets}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Training Approach</Label>
+                                            <p className="text-sm font-bold text-slate-700">{selectedApp?.petExperience?.trainingExperience}</p>
+                                            {selectedApp?.petExperience?.petAllergies && (
+                                                <p className="text-xs text-rose-500 font-bold mt-2">Allergies: {selectedApp.petExperience.petAllergies}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <h3 className="text-xs font-black text-indigo-600 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                        <Heart className="w-4 h-4" /> Adoption Motivation
+                                    </h3>
+                                    <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 space-y-4">
+                                        <div>
+                                            <Label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Reason to Adopt</Label>
+                                            <p className="text-sm font-bold text-indigo-900 italic">"{selectedApp?.adoptionDetails?.reasonToAdopt}"</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Exercise Plan</Label>
+                                            <p className="text-sm font-bold text-indigo-900">{selectedApp?.adoptionDetails?.exercisePlan}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Engagement</Label>
+                                                <p className="text-sm font-bold text-indigo-900">{selectedApp?.adoptionDetails?.timeWithPet}</p>
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Budgeting</Label>
+                                                <p className="text-sm font-bold text-indigo-900">{selectedApp?.adoptionDetails?.petExpenses}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Vacation Management</Label>
+                                            <p className="text-sm font-bold text-indigo-900">{selectedApp?.adoptionDetails?.vacationPlan}</p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                        {/* AI Summary Block */}
+                        <section className="mt-12 bg-slate-900 p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-8xl pointer-events-none group-hover:scale-110 transition-transform">AI</div>
+                           <div className="relative z-10">
+                                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-6 flex items-center gap-2">
+                                    <Brain className="w-5 h-5 text-indigo-400" /> Neural Assessment Analysis
+                                </h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                                    <div className="lg:col-span-1">
+                                        <div className={`text-4xl font-black uppercase tracking-tighter mb-1 ${selectedApp?.aiReview?.verdict === 'accept' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                            {selectedApp?.aiReview?.verdict}
+                                        </div>
+                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest underline decoration-indigo-500 underline-offset-4">Machine Recommendation</div>
+                                    </div>
+                                    <div className="lg:col-span-3">
+                                        <p className="text-lg font-bold text-slate-100 leading-relaxed italic border-l-4 border-indigo-600 pl-6 py-2">
+                                            "{selectedApp?.aiReview?.reason}"
+                                        </p>
+                                    </div>
+                                </div>
+                           </div>
+                        </section>
+                    </div>
+
+                    <DialogFooter className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            Submitted on {new Date(selectedApp?.submissionDate).toLocaleDateString()} at {new Date(selectedApp?.submissionDate).toLocaleTimeString()}
+                        </div>
+                        {['ai-reviewed', 'under-manual-review'].includes(selectedApp?.status) && (
+                            <div className="flex gap-4">
+                                <Button 
+                                    className="bg-green-600 hover:bg-green-700 h-14 rounded-2xl px-12 font-black text-base uppercase tracking-widest shadow-xl shadow-green-100"
+                                    onClick={() => handleReview(selectedApp?._id, 'accept')}
+                                >
+                                    APPROVE
+                                </Button>
+                                <Button 
+                                    variant="destructive" 
+                                    className="bg-red-600 hover:bg-red-700 h-14 rounded-2xl px-12 font-black text-base uppercase tracking-widest shadow-xl shadow-red-100"
+                                    onClick={() => handleReview(selectedApp?._id, 'reject')}
+                                >
+                                    DECLINE
+                                </Button>
+                            </div>
+                        )}
+                        {['accepted', 'rejected'].includes(selectedApp?.status) && (
+                            <Button variant="outline" className="h-14 rounded-2xl px-12 font-black uppercase tracking-widest border-2" onClick={() => setSelectedApp(null)}>
+                                Close Record
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
