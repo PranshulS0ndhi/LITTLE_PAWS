@@ -57,7 +57,7 @@ class AIReviewer:
         """
         
         try:
-            result = await self.chain.ainvoke({{"details": details}})
+            result = await self.chain.ainvoke({"details": details})
             # Ensure verdict is lowercase and matches enum
             if result.get("verdict"):
                 result["verdict"] = result["verdict"].lower()

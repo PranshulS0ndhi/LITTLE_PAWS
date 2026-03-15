@@ -2,7 +2,7 @@ const Pet = require('../models/pets.model');
 const Shelter = require('../models/shelter.model')
 const {imageUploadUtil} = require('../helpers/cloudinary')
 const AdoptionForm = require('../models/adoptionForm.model')
-const sendAdoptionApplication = require('../helpers/kafkaProducer')
+const redis = require('../helpers/redisClient')
 
 const reportStray =  async (req, res) => {
     try {
@@ -189,7 +189,8 @@ const sendForm = async (req, res) => {
     const savedForm = await adoptionForm.save();
 
    
-    await sendAdoptionApplication(savedForm);
+    // Push to Redis queue for AI review
+    await redis.rpush('adoption_queue', savedForm._id.toString());
 
     
     res.status(201).json({
