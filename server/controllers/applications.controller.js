@@ -1,5 +1,6 @@
 const Applications = require('../models/adoptionForm.model')
 const User = require('../models/User')
+const Shelter = require('../models/shelter.model')
 
 
 const viewApplications = async (req, res) => {

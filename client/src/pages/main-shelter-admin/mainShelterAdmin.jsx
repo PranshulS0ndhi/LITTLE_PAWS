@@ -23,6 +23,15 @@ const MainShelterAdmin = () => {
         try {
             const response = await axios.get('http://localhost:5000/api/shelterAdmin/applications', { withCredentials: true });
             if (response.data.success) {
+                // If silent fetch and count increased, show toast
+                if (silent && response.data.applications.length > applications.length) {
+                    const newCount = response.data.applications.length - applications.length;
+                    toast({
+                        title: "New Application Received!",
+                        description: `You have ${newCount} new request(s) to review.`,
+                        variant: "default"
+                    });
+                }
                 setApplications(response.data.applications);
             }
         } catch (error) {
@@ -46,6 +55,13 @@ const MainShelterAdmin = () => {
     useEffect(() => {
         fetchApplications();
         fetchReviewMode();
+
+        // 10-second polling for real-time updates without refreshing
+        const interval = setInterval(() => {
+            fetchApplications(true); // silent fetch
+        }, 10000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const handleToggleMode = async () => {
