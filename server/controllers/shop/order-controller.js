@@ -259,8 +259,8 @@ const createOrder = async (req, res) => {
         }))
       }],
       application_context: {
-        return_url: 'http://localhost:5173/shop/paypal-return',
-        cancel_url: 'http://localhost:5173/shop/paypal-cancel',
+        return_url: 'http://localhost:5100/shop/paypal-return',
+        cancel_url: 'http://localhost:5100/shop/paypal-cancel',
         brand_name: 'Your Store Name',
         landing_page: 'BILLING',
         user_action: 'PAY_NOW'

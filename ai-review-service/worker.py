@@ -68,3 +68,6 @@ async def process_queue():
         except Exception as e:
             logger.error(f"Error in worker loop: {e}")
             await asyncio.sleep(5)  # Backoff on error
+
+if __name__ == "__main__":
+    asyncio.run(process_queue())

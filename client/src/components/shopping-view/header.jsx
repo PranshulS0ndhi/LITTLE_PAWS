@@ -68,8 +68,10 @@ function HeaderRightContent() {
     }
   
     useEffect(() => {
-      dispatch(fetchCartItems(user?.id));
-    }, [dispatch]);
+      if (user?.id) {
+        dispatch(fetchCartItems(user?.id));
+      }
+    }, [dispatch, user?.id]);
   
     // console.log(cartItems, "sangam");
     const {isAuthenticated,isLoading}=useSelector(state=>state.auth);
