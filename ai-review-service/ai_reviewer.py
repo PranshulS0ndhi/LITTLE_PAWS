@@ -1,7 +1,7 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-from .config import settings
+from config import settings
 
 class AIReviewer:
     def __init__(self):

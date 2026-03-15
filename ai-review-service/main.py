@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import asyncio
-from .worker import process_queue
-from .config import settings
+from worker import process_queue
+from config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

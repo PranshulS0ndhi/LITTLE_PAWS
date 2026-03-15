@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from .redis_client import get_redis
-from .db import get_application, update_status
-from .ai_reviewer import ai_reviewer
+from redis_client import get_redis
+from db import get_application, update_status
+from ai_reviewer import ai_reviewer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
