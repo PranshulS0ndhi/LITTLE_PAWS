@@ -1,5 +1,5 @@
 
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 import './App.css'
 import AuthLayout from './components/auth/layout'
 import AuthLogin from './pages/auth/login'
@@ -24,10 +24,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth } from './store/auth-slice';
 import { useEffect } from 'react';
 import { Skeleton } from './components/ui/skeleton';
-import MainAdminPanel from './pages/main-shelter-admin/mainShelterAdmin';
-import MainReportStray from './pages/main-report-stray/mainReportStray';
-import AboutUs from './pages/main-about-us/MainAboutUs';
 import ApplicationStatus from './pages/main-application-status/ApplicationStatus';
+import AdoptionRequests from './pages/main-adoption-requests/AdoptionRequests';
+import MainAdminPanel from './pages/main-shelter-admin/mainShelterAdmin';
+import AboutUs from './pages/main-about-us/MainAboutUs';
+import MainReportStray from './pages/main-report-stray/mainReportStray';
+import ShelterAdminRegister from './pages/auth/shelter-admin-register';
 
 function App() {
 
@@ -55,6 +57,11 @@ function App() {
           </CheckAuth>}/>
       <Route path='/applicationStatus' element={
         <CheckAuth isAuthenticated={isAuthenticated} user={user}>
+              <AdoptionRequests/>
+          </CheckAuth>}/>
+      <Route path='/my-applications' element={<Navigate to="/applicationStatus" replace />} />
+      <Route path='/applicationStatus/:id' element={
+        <CheckAuth isAuthenticated={isAuthenticated} user={user}>
               <ApplicationStatus/>
           </CheckAuth>}/>
       
@@ -66,8 +73,10 @@ function App() {
           </CheckAuth>}/>
       
       <Route path="/shelterAdmin" element={
+        <CheckAuth isAuthenticated={isAuthenticated} user={user}>
             <MainAdminPanel/>
-        }></Route>
+        </CheckAuth>
+      }></Route>
     </Routes>
     
       <Routes>
@@ -87,6 +96,7 @@ function App() {
         }>
         <Route path="login" element={<AuthLogin/>}/>
         <Route path="register" element={<AuthRegister/>}/>
+        <Route path="register-shelter-admin" element={<ShelterAdminRegister/>}/>
         </Route>
         <Route path="/admin" element={
           <CheckAuth isAuthenticated={isAuthenticated} user={user}>

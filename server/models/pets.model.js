@@ -13,6 +13,11 @@ const petSchema = new mongoose.Schema({
         ref: 'User', 
         required: false,
     },
+    shelter: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Shelter',
+        required: true
+    }
 });
 
 module.exports = mongoose.model('Pet', petSchema);

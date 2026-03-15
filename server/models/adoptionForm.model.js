@@ -8,8 +8,11 @@ const AdoptionFormSchema = new mongoose.Schema({
   },
   city: {
     type: String,
-  }
-  ,
+  },
+  shelter: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'Shelter',
+  },
   pet: { 
     type: mongoose.Schema.ObjectId,
     ref: 'Pet',
@@ -46,23 +49,21 @@ const AdoptionFormSchema = new mongoose.Schema({
     trainingExperience: { type: String, required: true },
   },
   adoptionDetails: {
-    petName: { type: String, required: true },
     reasonToAdopt: { type: String, required: true },
     timeWithPet: { type: String, required: true },
     exercisePlan: { type: String, required: true },
-    emergencyPlan: { type: String },
-    adjustmentPlan: { type: String },
     petExpenses: { type: String, required: true },
     vacationPlan: { type: String, required: true },
   },
   status: {
     type: String,
-    enum: ['under-review', 'accepted', 'rejected'],
+    enum: ['under-review', 'ai-reviewed', 'under-manual-review', 'accepted', 'rejected'],
     default: 'under-review',
   },
   aiReview: {
     verdict: { type: String },
     reason: { type: String },
+    reviewType: { type: String, enum: ['complete', 'partial'] },
     reviewedAt: { type: Date },
   },
   submissionDate: {

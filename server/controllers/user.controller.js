@@ -152,7 +152,6 @@ const sendForm = async (req, res) => {
     const { id: userId } = req.user; 
    
     const { 
-      city, 
       personalInfo, 
       livingConditions, 
       petExperience, 
@@ -178,7 +177,8 @@ const sendForm = async (req, res) => {
     const adoptionForm = new AdoptionForm({
       user: userId,
       pet: petId,
-      city,
+      shelter: pet.shelter,
+      city: pet.region, // Region is the city field in Pets model
       personalInfo,
       livingConditions,
       petExperience,

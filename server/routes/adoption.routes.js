@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { submitAdoption, getAdoptionStatus } = require('../controllers/adoption.controller');
+const { submitAdoption, getAdoptionStatus, getUserApplications } = require('../controllers/adoption.controller');
+const { verifyUser } = require('../middlewares/auth.middleware');
 
 // Submit a new application
-router.post('/submit', submitAdoption);
+router.post('/submit', verifyUser, submitAdoption);
 
-// Check application status
+// Get user applications
+router.get('/my-applications', verifyUser, getUserApplications);
+
+// Check application status by ID
 router.get('/status/:id', getAdoptionStatus);
 
 module.exports = router;

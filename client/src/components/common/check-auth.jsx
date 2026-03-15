@@ -16,7 +16,11 @@ function CheckAuth({isAuthenticated,user, children}) {
         }
     }
 
-    if(isAuthenticated && user?.role !=="seller" && location.pathname.includes('/admin')){
+    if(isAuthenticated && user?.role !=="seller" && location.pathname.includes('/admin') && !location.pathname.includes('/shelterAdmin')){
+        return <Navigate to="/unauth-page"/>
+    }
+
+    if(isAuthenticated && user?.role !== "shelterAdmin" && location.pathname.includes('/shelterAdmin')){
         return <Navigate to="/unauth-page"/>
     }
     if(isAuthenticated && user?.role==="seller" && location.pathname.includes('shop')){

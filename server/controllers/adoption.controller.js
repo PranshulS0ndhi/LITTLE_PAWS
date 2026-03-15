@@ -55,7 +55,28 @@ const getAdoptionStatus = async (req, res) => {
     }
 };
 
+const getUserApplications = async (req, res) => {
+    try {
+        const { id: userId } = req.user;
+        const applications = await AdoptionForm.find({ user: userId })
+            .populate('pet')
+            .sort({ submissionDate: -1 });
+
+        res.status(200).json({
+            success: true,
+            applications
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching applications',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     submitAdoption,
-    getAdoptionStatus
+    getAdoptionStatus,
+    getUserApplications
 };

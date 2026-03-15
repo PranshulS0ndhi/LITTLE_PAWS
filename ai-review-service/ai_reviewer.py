@@ -30,8 +30,22 @@ class AIReviewer:
             """),
             ("user", "Adoption Application Details:\n{details}")
         ])
+
+        self.spam_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a helpful assistant filtering adoption applications for spam.
+            Is this application clearly spam, nonsensical, or a test submission?
+            
+            Respond ONLY in strict JSON format:
+            {{
+                "is_spam": true or false,
+                "reason": "A concise explanation for the decision."
+            }}
+            """),
+            ("user", "Check this application for spam:\n{details}")
+        ])
         
         self.chain = self.prompt | self.model | self.parser
+        self.spam_chain = self.spam_prompt | self.model | self.parser
 
     async def review(self, application_data: dict):
         # Flatten the nested dict for the prompt
@@ -68,5 +82,14 @@ class AIReviewer:
                 "verdict": "rejected", 
                 "reason": "Internal system error during AI review. Manual verification required."
             }
+
+    async def spam_check(self, application_data: dict):
+        details = str(application_data) # Lightweight string representation for spam check
+        try:
+            result = await self.spam_chain.ainvoke({"details": details})
+            return result
+        except Exception as e:
+            print(f"Spam Check Error: {e}")
+            return {"is_spam": False, "reason": "Error during spam check, proceeding to manual review."}
 
 ai_reviewer = AIReviewer()

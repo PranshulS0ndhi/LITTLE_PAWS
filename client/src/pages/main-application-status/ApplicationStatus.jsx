@@ -1,157 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { AlertCircle, CheckCircle, Clock, ArrowLeft, BrainCircuit, Activity } from 'lucide-react';
 import axios from "axios";
 import MainNavbar from '@/components/main-navbar/MainNavbar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ApplicationStatus = () => {
-  const [adoptionStatus, setAdoptionStatus] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { id } = useParams();
+  const [application, setApplication] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchAdoptionStatus = async () => {
       try {
-        
-        const response = await axios.get("http://localhost:5000/api/user/adoption-status", {
-            withCredentials: true, // Ensures cookies are sent with the request
-          });
-        // setAdoptionStatus(response?.data?.applications[0]?.status);
-        setAdoptionStatus(response?.data?.applications?.[response.data.applications.length - 1]?.status);
-        //console.log(response);
-        setIsLoading(false);
+        const response = await axios.get(`http://localhost:5000/api/adoptions/status/${id}`, {
+          withCredentials: true,
+        });
+        if (response.data.success) {
+          setApplication(response.data);
+        }
       } catch (err) {
         setError(err.response?.data?.message || err.message);
+      } finally {
         setIsLoading(false);
       }
     };
-    
 
-    fetchAdoptionStatus();
-    
-  }, []);
-
-  const renderStatusIcon = (status) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="text-yellow-500 w-12 h-12" />;
-      case 'approved':
-        return <CheckCircle className="text-green-500 w-12 h-12" />;
-      case 'rejected':
-        return <AlertCircle className="text-red-500 w-12 h-12" />;
-      default:
-        return null;
+    if (id) {
+      fetchAdoptionStatus();
     }
-  };
+  }, [id]);
 
-  const statusMessages = {
-    pending: "Your adoption application is currently under review.",
-    approved: "Congratulations! Your adoption application has been approved.",
-    rejected: "We're sorry, but your adoption application was not approved at this time."
+  const statusConfigs = {
+    'under-review': {
+      icon: <Clock className="w-16 h-16 text-yellow-500 mb-4 animate-pulse" />,
+      bgClass: 'bg-yellow-50 border-yellow-100',
+      textClass: 'text-yellow-800',
+      title: 'Under AI Review',
+      message: 'Our AI is currently analyzing your application to ensure the best match.',
+      description: 'This usually takes less than a minute. We evaluate your profile against the pet\'s needs.'
+    },
+    'ai-reviewed': {
+      icon: <BrainCircuit className="w-16 h-16 text-blue-500 mb-4" />,
+      bgClass: 'bg-blue-50 border-blue-100',
+      textClass: 'text-blue-800',
+      title: 'AI Review Complete',
+      message: 'The initial AI assessment is complete.',
+      description: 'Your application is now waiting for final confirmation from the shelter staff.'
+    },
+    'under-manual-review': {
+      icon: <Activity className="w-16 h-16 text-orange-500 mb-4" />,
+      bgClass: 'bg-orange-50 border-orange-100',
+      textClass: 'text-orange-800',
+      title: 'Under Manual Review',
+      message: 'Shelter staff are currently reviewing your application details.',
+      description: 'They are looking at the specifics of your living conditions and experience.'
+    },
+    'accepted': {
+      icon: <CheckCircle className="w-16 h-16 text-green-500 mb-4" />,
+      bgClass: 'bg-green-50 border-green-100',
+      textClass: 'text-green-800',
+      title: 'Congratulations!',
+      message: 'Your application has been accepted.',
+      description: 'The shelter will contact you shortly to arrange a meeting with your new friend!'
+    },
+    'rejected': {
+      icon: <AlertCircle className="w-16 h-16 text-red-500 mb-4" />,
+      bgClass: 'bg-red-50 border-red-100',
+      textClass: 'text-red-800',
+      title: 'Application Update',
+      message: 'Your application was not approved at this time.',
+      description: 'Please see the reason below for more details.'
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen text-red-500">
-        <p>Error: {error}</p>
-      </div>
-    );
-  }
-  const statusConfigs = {
-    pending: {
-      icon: <Clock className="w-20 h-20 text-yellow-500 mx-auto mb-6" />,
-      bgClass: 'bg-yellow-50 border-yellow-200',
-      textClass: 'text-yellow-800',
-      title: 'Pending Review',
-      message: 'We appreciate your patience. Our team is carefully reviewing your application.',
-    },
-    approved: {
-      icon: <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />,
-      bgClass: 'bg-green-50 border-green-200',
-      textClass: 'text-green-800',
-      title: 'Application Approved',
-      message: 'Congratulations! Your adoption application has been approved.',
-    },
-    rejected: {
-      icon: <AlertCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />,
-      bgClass: 'bg-red-50 border-red-200',
-      textClass: 'text-red-800',
-      title: 'Application Rejected',
-      message: 'We regret to inform you that your application was not approved at this time.',
-    }
-  };
-  const config = statusConfigs[adoptionStatus] || statusConfigs.pending;
-
-  return (
-    <div>
-      <MainNavbar/>
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className={`
-        w-full max-w-lg mx-auto 
-        rounded-2xl shadow-2xl overflow-hidden
-        transform transition-all duration-300 hover:scale-105
-        ${config.bgClass} border-2
-      `}>
-        <div className="p-8 text-center">
-          {config.icon}
-          
-          <h1 className={`
-            text-4xl font-extrabold mb-6 
-            ${config.textClass} tracking-tight
-          `}>
-            {config.title}
-          </h1>
-          
-          <p className={`
-            text-xl mb-8 
-            ${config.textClass} opacity-80
-          `}>
-            {config.message}
-          </p>
-          
-          {adoptionStatus === 'pending' && (
-            <div className="bg-white/70 rounded-xl p-6 shadow-inner">
-              <p className="text-gray-700 italic">
-                Our team is working diligently to process your application. 
-                We'll update you as soon as possible.
-              </p>
-            </div>
-          )}
-          
-          {adoptionStatus === 'approved' && (
-            <div className="bg-white/70 rounded-xl p-6 shadow-inner">
-              <p className="text-gray-700">
-                Get ready to welcome your new family member! 
-                Our team will contact you with next steps shortly.
-              </p>
-            </div>
-          )}
-          
-          {adoptionStatus === 'rejected' && (
-            <div className="bg-white/70 rounded-xl p-6 shadow-inner">
-              <p className="text-gray-700">
-                We understand this may be disappointing. 
-                Our team is available to provide further guidance.
-              </p>
-            </div>
-          )}
-          
-          {/* Optional: Debug information */}
-          {/* <div className="mt-6 text-sm text-gray-500 opacity-50">
-            <pre className="bg-white/30 rounded p-2 text-xs overflow-x-auto">
-              {JSON.stringify(adoptionStatus, null, 2)}
-            </pre>
-          </div> */}
+      <div className="min-h-screen bg-slate-50">
+        <MainNavbar />
+        <div className="max-w-xl mx-auto pt-32 px-4">
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       </div>
-    </div>
+    );
+  }
+
+  if (error || !application) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <MainNavbar />
+        <div className="max-w-xl mx-auto pt-32 px-4 text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Status</h2>
+          <p className="text-gray-600 mb-6">{error || "Application not found"}</p>
+          <Link to="/applicationStatus" className="text-indigo-600 font-semibold flex items-center justify-center">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to My Applications
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const config = statusConfigs[application.status] || statusConfigs['under-review'];
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <MainNavbar />
+      <div className="max-w-xl mx-auto pt-32 px-4 pb-12">
+        <Link to="/applicationStatus" className="text-gray-500 hover:text-gray-800 mb-6 inline-flex items-center transition-colors">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to My Applications
+        </Link>
+        
+        <Card className={`border-2 shadow-xl overflow-hidden ${config.bgClass}`}>
+          <CardHeader className="text-center pb-2">
+            <div className="flex justify-center">{config.icon}</div>
+            <CardTitle className={`text-3xl font-bold ${config.textClass}`}>
+              {config.title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8 text-center">
+            <p className={`text-lg font-medium mb-4 ${config.textClass}`}>
+              {config.message}
+            </p>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              {config.description}
+            </p>
+
+            {application.aiReview?.reason && (
+              <div className="mt-8 bg-white/60 rounded-xl p-6 text-left border border-white">
+                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <BrainCircuit className="w-4 h-4" />
+                  AI Assessment Note:
+                </h4>
+                <p className="text-gray-700 italic">
+                  "{application.aiReview.reason}"
+                </p>
+              </div>
+            )}
+
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="flex justify-between items-center text-sm text-gray-500">
+                <span>Application ID:</span>
+                <span className="font-mono text-xs">{id}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

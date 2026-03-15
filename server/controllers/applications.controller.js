@@ -24,12 +24,20 @@ const viewApplications = async (req, res) => {
       }
   
       // Find applications for the admin's city
-      const applications = await Applications.find({ city: adminCity }).populate("user");
+      // Only show applications that have been processed by AI (ai-reviewed or under-manual-review)
+      const applications = await Applications.find({ 
+        city: adminCity,
+        status: { $in: ['ai-reviewed', 'under-manual-review', 'accepted', 'rejected'] }
+      }).populate("user").populate("pet");
   
       console.log("Applications found:", applications);
   
       if (!applications.length) {
-        return res.status(404).json({ message: "No applications found for your city." });
+        return res.status(200).json({  // Change to 200 with empty array to avoid frontend error
+          success: true,
+          message: "No applications found for your city.",
+          applications: []
+        });
       }
   
       res.status(200).json({
@@ -52,7 +60,7 @@ const viewApplications = async (req, res) => {
     try {
         const updatedApplication = await Applications.findByIdAndUpdate(
             applicationId,
-            { status: 'approved' }, 
+            { status: 'accepted' }, 
             { new: true } 
         );
 
@@ -159,4 +167,51 @@ const rejectApplication = async (req, res) => {
 //     }
 // }
 
-module.exports = {viewApplications , acceptApplication , rejectApplication};
+const setReviewMode = async (req, res) => {
+    try {
+        const { id: adminId } = req.user;
+        const { mode } = req.body;
+
+        if (!['complete', 'partial'].includes(mode)) {
+            return res.status(400).json({ success: false, message: "Invalid mode." });
+        }
+
+        const shelter = await Shelter.findOneAndUpdate(
+            { shelterAdmin: adminId },
+            { aiReviewMode: mode },
+            { new: true }
+        );
+
+        if (!shelter) {
+            return res.status(404).json({ success: false, message: "Shelter not found for this admin." });
+        }
+
+        res.status(200).json({
+            success: true,
+            mode: shelter.aiReviewMode,
+            message: `AI Review Mode updated to ${mode}`
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error updating review mode", error: error.message });
+    }
+};
+
+const getReviewMode = async (req, res) => {
+    try {
+        const { id: adminId } = req.user;
+        const shelter = await Shelter.findOne({ shelterAdmin: adminId });
+
+        if (!shelter) {
+            return res.status(404).json({ success: false, message: "Shelter not found." });
+        }
+
+        res.status(200).json({
+            success: true,
+            mode: shelter.aiReviewMode
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching review mode", error: error.message });
+    }
+};
+
+module.exports = { viewApplications, acceptApplication, rejectApplication, setReviewMode, getReviewMode };
